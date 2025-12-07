@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background: #2b2b2b;
+	color: #47ccfc;
+	font-family: 'Courier New', monospace;
+}
+
+.grid-bg {
+	background-image: 
+		linear-gradient(rgba(211, 188, 245, 0.03) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(211, 188, 245, 0.03) 1px, transparent 1px);
+	background-size: 20px 20px;
+}
+
+.border-box {
+	@apply border-2 border-dashed border-[#47ccfc]/30;
+}
+
+.text-primary {
+	@apply text-[#47ccfc] font-mono;
+}
+
+.text-secondary {
+	@apply text-[#47ccfc]/80 font-mono;
+}
+
+.input-field {
+	@apply w-full bg-transparent border-2 border-[#47ccfc]/30 p-2 md:p-3 text-[#47ccfc] font-mono text-sm md:text-base focus:outline-none focus:border-[#47ccfc];
+}
+
+.btn-primary {
+	@apply w-full bg-[#47ccfc] text-[#2b2b2b] p-3 md:p-4 font-bold font-mono text-sm md:text-base hover:bg-[#47ccfc]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.link-hover {
+	@apply text-[#47ccfc] hover:text-white transition-colors font-mono text-sm md:text-base;
+}
+
+.card-hover {
+	@apply hover:bg-[#47ccfc]/10 transition-colors;
+}
+
+.tech-tag {
+	@apply border border-[#47ccfc]/40 text-[#47ccfc] px-2 md:px-3 py-1 text-xs md:text-sm font-mono;
+}

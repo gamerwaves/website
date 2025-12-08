@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	const isAuthenticated = authToken === ADMIN_PASSWORD;
 	
 	if (!isAuthenticated) {
-		return { isAuthenticated: false, posts: [] };
+		return { isAuthenticated: false, posts: [], contacts: [] };
 	}
 	
 	const posts = await getPosts();
@@ -45,7 +45,10 @@ export const load: PageServerLoad = async ({ cookies }) => {
 		new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
 	
-	return { isAuthenticated: true, posts };
+	const { getContacts } = await import('$lib/server/email');
+	const contacts = await getContacts();
+	
+	return { isAuthenticated: true, posts, contacts };
 };
 
 export const actions: Actions = {
@@ -115,6 +118,61 @@ export const actions: Actions = {
 		const postId = formData.get('postId') as string;
 		
 		await deletePost(postId);
+		return { success: true };
+	},
+	
+	reply: async ({ request, cookies }) => {
+		if (cookies.get('admin_auth') !== ADMIN_PASSWORD) {
+			return fail(401, { error: 'Unauthorized' });
+		}
+		
+		const { getContact, addReplyToContact, sendReply } = await import('$lib/server/email');
+		const formData = await request.formData();
+		const contactId = formData.get('contactId') as string;
+		const replyMessage = formData.get('message') as string;
+		
+		const contact = await getContact(contactId);
+		if (!contact) {
+			return fail(404, { error: 'Contact not found' });
+		}
+		
+		try {
+			const subject = `Re: Your message to Dwait Pandhi`;
+			await sendReply(contact.email, subject, replyMessage, contact.contactNumber);
+			
+			const reply = {
+				id: Date.now().toString(),
+				from: env.SMTP_USER || '',
+				to: contact.email,
+				message: replyMessage,
+				date: new Date().toISOString(),
+				direction: 'sent' as const
+			};
+			
+			await addReplyToContact(contactId, reply);
+			
+			return { success: true };
+		} catch (error: any) {
+			console.error('Reply error:', error);
+			const errorMessage = error.code === 'EAUTH' 
+				? 'Email authentication failed. Check your SMTP credentials in .env file.'
+				: error.message || 'Failed to send reply';
+			return fail(500, { error: errorMessage });
+		}
+	},
+	
+	updateStatus: async ({ request, cookies }) => {
+		if (cookies.get('admin_auth') !== ADMIN_PASSWORD) {
+			return fail(401, { error: 'Unauthorized' });
+		}
+		
+		const { updateContactStatus } = await import('$lib/server/email');
+		const formData = await request.formData();
+		const contactId = formData.get('contactId') as string;
+		const status = formData.get('status') as 'new' | 'replied' | 'closed';
+		
+		await updateContactStatus(contactId, status);
+		
 		return { success: true };
 	}
 };

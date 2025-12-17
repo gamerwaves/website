@@ -8,6 +8,11 @@ body {
 	background: #2b2b2b;
 	color: #47ccfc;
 	font-family: 'Courier New', monospace;
+	cursor: none;
+}
+
+* {
+	cursor: none !important;
 }
 
 .grid-bg {

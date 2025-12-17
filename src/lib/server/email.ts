@@ -44,15 +44,15 @@ export function createTransporter() {
     },
 
     tls: {
-      minVersion: 'TLSv1.2',
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1'
     },
 
     // Nest does NOT support pool, remove it completely
     // pool: false,
 
-    debug: false,
-    logger: false
+    debug: true,
+    logger: true
   };
 
   return nodemailer.createTransport(options);

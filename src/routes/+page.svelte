@@ -25,12 +25,7 @@
 	let statusMessage = '';
 	let copyrightClicks = 0;
 
-	function handleCopyrightClick() {
-		copyrightClicks++;
-		if (copyrightClicks >= 5) {
-			window.location.href = '/admin';
-		}
-	}
+
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -278,18 +273,5 @@
 				</button>
 			</form>
 		</div>
-	</div>
-
-	<!-- Footer -->
-	<div class="border-box p-4 md:p-6 text-center">
-		<p class="text-[#47ccfc]/60 font-mono text-xs md:text-sm">
-			<button 
-				on:click={handleCopyrightClick}
-				class="hover:text-[#47ccfc] transition-colors cursor-default"
-				type="button"
-			>
-				&copy;
-			</button> 2025 Dwait Pandhi. Built with Svelte & Tailwind CSS
-		</p>
 	</div>
 </div>

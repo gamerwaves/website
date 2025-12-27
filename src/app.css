@@ -15,6 +15,33 @@ body {
 	cursor: none !important;
 }
 
+/* Ensure all content appears above grid trails */
+* {
+	position: relative;
+	z-index: 2;
+}
+
+/* Reset z-index for body and html to avoid stacking issues */
+html, body {
+	z-index: auto;
+}
+
+/* Background elements should be lowest */
+.grid-bg {
+	z-index: 0;
+}
+
+.grid-trail-square {
+	position: fixed;
+	width: 20px;
+	height: 20px;
+	background-color: #fff6de;
+	pointer-events: none;
+	z-index: 1;
+	opacity: 0;
+	transition: opacity 0.3s ease-in-out;
+}
+
 .grid-bg {
 	background-image: 
 		linear-gradient(rgba(211, 188, 245, 0.03) 1px, transparent 1px),

@@ -11,6 +11,8 @@
 	let corners: HTMLDivElement[] = [];
 	let isSpinning = true;
 	let activeTarget: Element | null = null;
+	let gridTrails: Map<string, { element: HTMLDivElement; timeout: ReturnType<typeof setTimeout> }> = new Map();
+	let lastGridPosition = '';
 
 	onMount(() => {
 		if (!browser) return;
@@ -36,10 +38,61 @@
 			cursorWrapper.style.left = mouseX + 'px';
 			cursorWrapper.style.top = mouseY + 'px';
 			
+			// Update grid hover effect
+			updateGridHover(mouseX, mouseY);
+			
 			// If we have an active target, update corner positions
 			if (activeTarget) {
 				updateCornersForTarget(activeTarget);
 			}
+		};
+
+		// Update grid hover square
+		const updateGridHover = (x: number, y: number) => {
+			const gridSize = 20;
+			const gridX = Math.floor(x / gridSize) * gridSize;
+			const gridY = Math.floor(y / gridSize) * gridSize;
+			const gridKey = `${gridX}-${gridY}`;
+			
+			// Only create new trail if we moved to a different grid square
+			if (gridKey !== lastGridPosition) {
+				createGridTrail(gridX, gridY, gridKey);
+				lastGridPosition = gridKey;
+			}
+		};
+
+		// Create a new grid trail square
+		const createGridTrail = (gridX: number, gridY: number, gridKey: string) => {
+			// Clear existing trail at this position if any
+			if (gridTrails.has(gridKey)) {
+				const existing = gridTrails.get(gridKey)!;
+				clearTimeout(existing.timeout);
+				existing.element.remove();
+				gridTrails.delete(gridKey);
+			}
+
+			// Create new trail element
+			const trailElement = document.createElement('div');
+			trailElement.className = 'grid-trail-square';
+			trailElement.style.left = gridX + 'px';
+			trailElement.style.top = gridY + 'px';
+			document.body.appendChild(trailElement);
+
+			// Fade in
+			setTimeout(() => {
+				trailElement.style.opacity = '0.8';
+			}, 10);
+
+			// Set timeout to fade out after 2 seconds
+			const timeout = setTimeout(() => {
+				trailElement.style.opacity = '0';
+				setTimeout(() => {
+					trailElement.remove();
+					gridTrails.delete(gridKey);
+				}, 300); // Wait for fade out transition
+			}, 250);
+
+			gridTrails.set(gridKey, { element: trailElement, timeout });
 		};
 
 		// Mouse enter handler for targets
@@ -118,6 +171,14 @@
 			document.removeEventListener('mouseover', handleMouseEnter);
 			document.removeEventListener('mouseout', handleMouseLeave);
 			cancelAnimationFrame(spinAnimation);
+			
+			// Clean up all grid trails
+			gridTrails.forEach(({ element, timeout }) => {
+				clearTimeout(timeout);
+				element.remove();
+			});
+			gridTrails.clear();
+			
 			if (hideDefaultCursor) {
 				document.body.style.cursor = '';
 			}

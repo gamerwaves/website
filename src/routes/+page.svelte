@@ -23,7 +23,6 @@
 
 	let formStatus: 'idle' | 'sending' | 'success' | 'error' = 'idle';
 	let statusMessage = '';
-	let copyrightClicks = 0;
 
 
 
@@ -123,9 +122,12 @@
 
 		<!-- Main Intro -->
 		<div class="lg:col-span-9 border-box p-6 md:p-12">
-			<h2 class="text-4xl md:text-5xl lg:text-7xl font-bold text-primary mb-4 md:mb-6">
-				Hello,<br />I'm Dwait!
-			</h2>
+			<div class="flex items-start justify-between mb-4 md:mb-6">
+				<h2 class="text-4xl md:text-5xl lg:text-7xl font-bold text-primary">
+					Hello,<br />I'm Dwait!
+				</h2>
+				<pagering-link theme="dark"></pagering-link>
+			</div>
 			<p class="text-lg md:text-xl lg:text-2xl text-secondary leading-relaxed">
 				I am a full-stack developer who loves building innovative web applications. I specialize in
 				modern frameworks and enjoy solving complex problems with simple solutions.

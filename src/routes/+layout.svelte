@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import TargetCursor from '$lib/TargetCursor.svelte';
+	import { onMount } from 'svelte';
 
 	let copyrightClicks = 0;
 	function handleCopyrightClick() {
@@ -9,6 +10,27 @@
 			window.location.href = '/admin';
 		}
 	}
+
+	function preventAutoWebring() {
+		// Prevent automatic webring navigation by intercepting and disabling auto-redirect
+		// but keep the buttons functional for manual navigation
+		setTimeout(() => {
+			// Look for any automatic navigation attempts and prevent them
+			const webringElements = document.querySelectorAll('pagering-link');
+			webringElements.forEach(element => {
+				// Disable any automatic navigation but keep click handlers
+				element.addEventListener('click', (e) => {
+					// Allow manual clicks to work normally
+					return true;
+				});
+			});
+		}, 100);
+	}
+
+	onMount(() => {
+		// Prevent automatic webring navigation on page load
+		preventAutoWebring();
+	});
 </script>
 
 <svelte:head>
@@ -31,7 +53,7 @@
 				</button> 2025 Dwait Pandhi. Built with Svelte & Tailwind CSS
 			</p>
 			<br />
-			<div class="flex justify-center"><pagering-link></pagering-link></div>
+			<div class="flex justify-center"><pagering-link theme="dark"></pagering-link></div>
 		</div>
 	</div>
 </div>

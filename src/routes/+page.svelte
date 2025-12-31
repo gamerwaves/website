@@ -151,12 +151,12 @@
 			<p class="text-secondary text-sm md:text-base">Contact me on my email for my phone number.</p>
 		</div>
 
-		<a href="mailto:dwait.pandhi@gmail.com">
+		<a href="mailto:me@dwait.dev">
 			<div class="border-box p-4 md:p-6">
 				<div class="flex items-center gap-3 mb-2">
 					<span class="text-primary text-sm md:text-base">Email</span>
 				</div>
-				<p class="text-secondary text-sm md:text-base break-all">dwait.pandhi@gmail.com</p>
+				<p class="text-secondary text-sm md:text-base break-all">me@dwait.dev</p>
 			</div>
 		</a>
 	</div>

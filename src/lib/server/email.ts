@@ -105,13 +105,13 @@ export async function sendReply(to: string, subject: string, message: string, co
 	<hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
 	<p style="color: #999; font-size: 12px;">
 		Dwait Pandhi<br>
-		<a href="mailto:${env.SMTP_USER}" style="color: #0066cc;">${env.SMTP_USER}</a>
+		<a href="mailto:me@dwait.dev" style="color: #0066cc;">me@dwait.dev</a>
 	</p>
 </body>
 </html>`;
 	
 	const mailOptions: any = {
-		from: env.SMTP_USER,
+		from: 'me@dwait.dev',
 		to,
 		subject: finalSubject,
 		text: message, // Plain text fallback
@@ -291,7 +291,7 @@ Best regards,
 Dwait Pandhi`;
 
 	await transporter.sendMail({
-		from: env.SMTP_USER,
+		from: 'me@dwait.dev',
 		to,
 		subject,
 		text: emailBody,

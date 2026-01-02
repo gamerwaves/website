@@ -11,6 +11,20 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Post not found');
 	}
 	
+	// Configure marked with custom heading renderer
+	marked.use({
+		renderer: {
+			heading({ text, depth }: any) {
+				const id = text
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/^-|-$/g, '');
+				
+				return `<h${depth} id="${id}">${text}</h${depth}>\n`;
+			}
+		}
+	});
+	
 	const htmlContent = await marked(post.content);
 	
 	return {

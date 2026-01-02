@@ -2,6 +2,7 @@
 	import type { PageData, ActionData } from './$types';
 	import type { BlogPost } from '$lib/stores/blog';
 	import { enhance } from '$app/forms';
+	import { marked } from 'marked';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -25,6 +26,36 @@
 	$: filteredContacts = filterStatus === 'all' 
 		? data.contacts 
 		: data.contacts.filter((c: any) => c.status === filterStatus);
+
+	// Create a custom marked instance for preview
+	const previewMarked = marked.use({
+		renderer: {
+			heading({ text, depth }: any) {
+				const id = text
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/^-|-$/g, '');
+				
+				const sizeMap: Record<number, string> = {
+					1: 'text-2xl',
+					2: 'text-xl',
+					3: 'text-lg',
+					4: 'text-base',
+					5: 'text-sm',
+					6: 'text-xs'
+				};
+				const sizeClass = sizeMap[depth] || 'text-base';
+
+				return `<h${depth} id="${id}" class="${sizeClass} font-bold text-[#47ccfc] mt-4 mb-2">${text}</h${depth}>\n`;
+			},
+			hr() {
+				return '<hr class="border-t-2 border-dashed border-[#47ccfc]/30 my-4">\n';
+			},
+			image({ href, title, text }: any) {
+				return `<img src="${href}" alt="${text}" title="${title || ''}" class="border-2 border-dashed border-[#47ccfc]/30 my-4">\n`;
+			}
+		}
+	});
 
 	function formatMessage(text: string): string {
 		return text
@@ -365,6 +396,16 @@
 								class="w-full bg-transparent border-2 border-[#47ccfc]/30 p-2 md:p-3 text-[#47ccfc] font-mono text-sm md:text-base focus:outline-none focus:border-[#47ccfc] resize-none"
 							></textarea>
 						</div>
+						{#if formData.content}
+							<div class="border-2 border-dashed border-[#47ccfc]/30 p-4 md:p-6">
+								<p class="text-[#47ccfc]/60 font-mono text-xs mb-3">Preview:</p>
+								<article class="prose prose-invert prose-cyan max-w-none">
+									{#await marked.parse(formData.content) then html}
+										{@html html}
+									{/await}
+								</article>
+							</div>
+						{/if}
 						<div class="flex items-center gap-3">
 							<input
 								type="checkbox"

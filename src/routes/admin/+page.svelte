@@ -9,7 +9,7 @@
 
 	let isAuthenticated = data.isAuthenticated;
 	let password = '';
-	let activeTab: 'blog' | 'contacts' = 'blog';
+	let activeTab: 'blog' | 'contacts' | 'links' = 'blog';
 
 	let posts = data.posts || [];
 	let editingPost: BlogPost | null = null;
@@ -22,6 +22,16 @@
 	let syncMessage = '';
 	let isSyncing = false;
 	let isCleaning = false;
+
+	// Link shortener state
+	let shortLinks: any[] = [];
+	let isLoadingLinks = false;
+	let showLinkModal = false;
+	let linkFormData = { originalURL: '', path: '', tags: '' };
+	let isCreatingLink = false;
+	let linkMessage = '';
+	let copiedLinkId: string | null = null;
+	let editingLink: any = null;
 
 	$: filteredContacts = filterStatus === 'all' 
 		? data.contacts 
@@ -264,6 +274,104 @@
 			window.location.reload();
 		}
 	}
+
+	// Link shortener functions
+	async function loadShortLinks() {
+		isLoadingLinks = true;
+		linkMessage = '';
+		try {
+			const response = await fetch('/api/shorten', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'list' })
+			});
+			const result = await response.json();
+			if (response.ok) {
+				shortLinks = result.links || [];
+			} else {
+				linkMessage = result.error || 'Failed to load links';
+			}
+		} catch {
+			linkMessage = 'Failed to load links';
+		} finally {
+			isLoadingLinks = false;
+		}
+	}
+
+	async function createShortLink(e: Event) {
+		e.preventDefault();
+		if (!linkFormData.originalURL.trim()) return;
+		isCreatingLink = true;
+		linkMessage = '';
+		try {
+			const tags = linkFormData.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+			const isEditing = editingLink !== null;
+			const response = await fetch('/api/shorten', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: isEditing ? 'update' : 'create',
+					originalURL: linkFormData.originalURL,
+					path: linkFormData.path || undefined,
+					tags: tags.length > 0 ? tags : [],
+					linkId: isEditing ? editingLink.idString : undefined
+				})
+			});
+			const result = await response.json();
+			if (response.ok) {
+				linkMessage = isEditing ? 'Link updated successfully!' : 'Link created successfully!';
+				linkFormData = { originalURL: '', path: '', tags: '' };
+				editingLink = null;
+				showLinkModal = false;
+				await loadShortLinks();
+				setTimeout(() => (linkMessage = ''), 3000);
+			} else {
+				linkMessage = result.error || 'Failed to save link';
+			}
+		} catch {
+			linkMessage = 'Failed to save link';
+		} finally {
+			isCreatingLink = false;
+		}
+	}
+
+	function copyLinkUrl(shortURL: string, linkId: string) {
+		navigator.clipboard.writeText(shortURL);
+		copiedLinkId = linkId;
+		setTimeout(() => { copiedLinkId = null; }, 2000);
+	}
+
+	function openLinkModal() {
+		showLinkModal = true;
+		editingLink = null;
+		linkFormData = { originalURL: '', path: '', tags: '' };
+	}
+
+	function editLink(link: any) {
+		editingLink = link;
+		linkFormData = {
+			originalURL: link.originalURL,
+			path: link.path || '',
+			tags: link.tags ? link.tags.join(', ') : ''
+		};
+		showLinkModal = true;
+	}
+
+	function closeLinkModal() {
+		showLinkModal = false;
+		editingLink = null;
+		linkFormData = { originalURL: '', path: '', tags: '' };
+	}
+
+	// Portal action to teleport element to body
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
 </script>
 
 <div class="min-h-screen p-4 md:p-8">
@@ -333,6 +441,12 @@
 						class="px-4 md:px-6 py-2 font-mono text-sm md:text-base font-bold transition-colors {activeTab === 'contacts' ? 'bg-[#47ccfc] text-[#2b2b2b]' : 'border-2 border-[#47ccfc]/30 text-[#47ccfc] hover:bg-[#47ccfc]/10'}"
 					>
 						Contacts
+					</button>
+					<button
+						on:click={() => { activeTab = 'links'; loadShortLinks(); }}
+						class="px-4 md:px-6 py-2 font-mono text-sm md:text-base font-bold transition-colors {activeTab === 'links' ? 'bg-[#47ccfc] text-[#2b2b2b]' : 'border-2 border-[#47ccfc]/30 text-[#47ccfc] hover:bg-[#47ccfc]/10'}"
+					>
+						Links
 					</button>
 				</div>
 			</div>
@@ -687,7 +801,79 @@
 						</div>
 					</div>
 				</div>
+			{:else if activeTab === 'links'}
+				<!-- Link Shortener Tab -->
+				<div class="mb-4">
+					{#if linkMessage}
+						<div class="p-3 border-2 border-dashed {linkMessage.includes('successfully') ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'} font-mono text-xs mb-4">{linkMessage}</div>
+					{/if}
+					<div class="border-2 border-dashed border-[#47ccfc]/30 p-4 md:p-6 mb-4">
+						<div class="flex items-center justify-between gap-4 mb-4">
+							<h2 class="text-xl font-bold text-[#47ccfc] font-mono">Short Links</h2>
+							<button on:click={openLinkModal} class="bg-[#47ccfc] text-[#2b2b2b] px-4 md:px-6 py-2 font-bold font-mono text-sm md:text-base hover:bg-[#47ccfc]/90 transition-colors">+ NEW LINK</button>
+						</div>
+						{#if isLoadingLinks}
+							<p class="text-[#47ccfc]/60 font-mono text-sm text-center py-8">Loading links...</p>
+						{:else if shortLinks.length === 0}
+							<p class="text-[#47ccfc]/60 font-mono text-sm text-center py-8">No short links yet</p>
+						{:else}
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								{#each shortLinks as link}
+									<div class="border-2 border-dashed border-[#47ccfc]/30 p-4">
+										<div class="flex items-start justify-between gap-2 mb-3">
+											<div class="flex-1 min-w-0">
+												<p class="text-[#47ccfc] font-mono font-bold text-sm md:text-base break-all">{link.shortURL}</p>
+												<p class="text-[#47ccfc]/60 font-mono text-xs mt-1 break-all">{link.originalURL}</p>
+											</div>
+											<div class="flex gap-2 flex-shrink-0">
+												<button on:click={() => editLink(link)} class="px-3 py-1 border-2 border-[#47ccfc]/30 text-[#47ccfc] font-mono text-xs hover:bg-[#47ccfc]/10 transition-colors">EDIT</button>
+												<button on:click={() => copyLinkUrl(link.shortURL, link.idString)} class="px-3 py-1 border-2 border-[#47ccfc]/30 text-[#47ccfc] font-mono text-xs hover:bg-[#47ccfc]/10 transition-colors whitespace-nowrap">{copiedLinkId === link.idString ? 'COPIED!' : 'COPY'}</button>
+											</div>
+										</div>
+										{#if link.tags && link.tags.length > 0}
+											<div class="flex flex-wrap gap-2">
+												{#each link.tags as tag}
+													<span class="px-2 py-1 bg-[#47ccfc]/10 border border-[#47ccfc]/30 text-[#47ccfc] font-mono text-xs rounded">{tag}</span>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
 			{/if}
 		{/if}
 	</div>
 </div>
+
+<!-- Link Modal - Teleported to body for proper z-index -->
+{#if showLinkModal}
+	<div use:portal class="link-modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 9998;">
+		<div class="border-2 border-dashed border-[#47ccfc]/30 p-6 md:p-8 max-w-md w-full bg-[#2b2b2b]">
+			<div class="flex items-center justify-between mb-6 gap-4">
+				<h2 class="text-xl md:text-2xl font-bold text-[#47ccfc] font-mono">{editingLink ? 'Edit Short Link' : 'Create Short Link'}</h2>
+				<button on:click={closeLinkModal} class="text-[#47ccfc] hover:text-white font-mono text-lg" type="button">✕</button>
+			</div>
+			<form on:submit={createShortLink} class="space-y-4">
+				<div>
+					<label for="originalURL" class="block text-[#47ccfc] mb-2 font-mono text-sm">Original URL</label>
+					<input type="url" id="originalURL" bind:value={linkFormData.originalURL} required placeholder="https://example.com/long/url" class="w-full bg-transparent border-2 border-[#47ccfc]/30 p-2 md:p-3 text-[#47ccfc] font-mono text-sm focus:outline-none focus:border-[#47ccfc]" />
+				</div>
+				<div>
+					<label for="path" class="block text-[#47ccfc] mb-2 font-mono text-sm">Custom Slug (optional)</label>
+					<input type="text" id="path" bind:value={linkFormData.path} placeholder="my-custom-slug" class="w-full bg-transparent border-2 border-[#47ccfc]/30 p-2 md:p-3 text-[#47ccfc] font-mono text-sm focus:outline-none focus:border-[#47ccfc]" />
+				</div>
+				<div>
+					<label for="tags" class="block text-[#47ccfc] mb-2 font-mono text-sm">Tags (comma-separated)</label>
+					<input type="text" id="tags" bind:value={linkFormData.tags} placeholder="tag1, tag2" class="w-full bg-transparent border-2 border-[#47ccfc]/30 p-2 md:p-3 text-[#47ccfc] font-mono text-sm focus:outline-none focus:border-[#47ccfc]" />
+				</div>
+				<div class="flex flex-col md:flex-row gap-4">
+					<button type="submit" disabled={isCreatingLink} class="flex-1 bg-[#47ccfc] text-[#2b2b2b] p-3 font-bold font-mono text-sm hover:bg-[#47ccfc]/90 transition-colors disabled:opacity-50">{isCreatingLink ? 'SAVING...' : (editingLink ? 'UPDATE' : 'CREATE')}</button>
+					<button type="button" on:click={closeLinkModal} class="flex-1 border-2 border-[#47ccfc]/30 text-[#47ccfc] p-3 font-bold font-mono text-sm hover:bg-[#47ccfc]/10 transition-colors">CANCEL</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

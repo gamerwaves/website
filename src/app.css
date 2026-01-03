@@ -26,6 +26,12 @@ html, body {
 	z-index: auto;
 }
 
+/* Modal overlay needs to break out of stacking contexts */
+.link-modal-overlay {
+	position: fixed !important;
+	z-index: 9998 !important;
+}
+
 /* Background elements should be lowest */
 .grid-bg {
 	z-index: 0;

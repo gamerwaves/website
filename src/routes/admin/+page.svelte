@@ -291,7 +291,7 @@
 				shortLinks = result.links || [];
 				console.log('Loaded short links:', shortLinks, 'Count:', result.count);
 				if (shortLinks.length === 0) {
-					linkMessage = 'No short links created yet';
+					linkMessage = 'No short links found. Check browser console for domain info.';
 				}
 			} else {
 				linkMessage = result.error || 'Failed to load links';

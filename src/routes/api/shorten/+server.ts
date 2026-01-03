@@ -62,8 +62,30 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json(data);
 		} else if (action === 'list') {
 			try {
+				// First, try to get all domains to find the correct one
+				const domainsResponse = await fetch('https://api.short.io/api/domains', {
+					method: 'GET',
+					headers: {
+						accept: 'application/json',
+						Authorization: SHORT_IO_API_KEY
+					}
+				});
+
+				const domainsData = await domainsResponse.json();
+				console.log('Available domains:', domainsData);
+
+				// Find the domain ID for short.dwait.dev
+				let domainId = SHORT_IO_DOMAIN_ID;
+				if (domainsData.domains) {
+					const targetDomain = domainsData.domains.find((d: any) => d.hostname === 'short.dwait.dev');
+					if (targetDomain) {
+						domainId = targetDomain.id;
+						console.log('Found domain ID for short.dwait.dev:', domainId);
+					}
+				}
+
 				const response = await fetch(
-					`https://api.short.io/api/links?domain_id=${SHORT_IO_DOMAIN_ID}&limit=150`,
+					`https://api.short.io/api/links?domain_id=${domainId}&limit=150`,
 					{
 						method: 'GET',
 						headers: {
@@ -74,6 +96,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				);
 
 				const data = await response.json();
+				console.log('Links response:', data);
 
 				if (!response.ok) {
 					console.error('Short.io API error:', data);

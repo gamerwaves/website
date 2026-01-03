@@ -38,7 +38,7 @@
 		: data.contacts.filter((c: any) => c.status === filterStatus);
 
 	// Create a custom marked instance for preview
-	const previewMarked = marked.use({
+	marked.use({
 		renderer: {
 			heading({ text, depth }: any) {
 				const id = text
@@ -286,13 +286,22 @@
 				body: JSON.stringify({ action: 'list' })
 			});
 			const result = await response.json();
+			console.log('Short links response:', result);
 			if (response.ok) {
 				shortLinks = result.links || [];
+				console.log('Loaded short links:', shortLinks, 'Count:', result.count);
+				if (shortLinks.length === 0) {
+					linkMessage = 'No short links created yet';
+				}
 			} else {
 				linkMessage = result.error || 'Failed to load links';
+				if (result.details) {
+					console.error('API error details:', result.details);
+				}
 			}
-		} catch {
-			linkMessage = 'Failed to load links';
+		} catch (error) {
+			console.error('Error loading short links:', error);
+			linkMessage = 'Failed to load links: ' + String(error);
 		} finally {
 			isLoadingLinks = false;
 		}

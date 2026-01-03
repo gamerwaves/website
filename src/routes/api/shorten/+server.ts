@@ -61,24 +61,35 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			return json(data);
 		} else if (action === 'list') {
-			const response = await fetch(
-				`https://api.short.io/api/links?domain_id=${SHORT_IO_DOMAIN_ID}&limit=150`,
-				{
-					method: 'GET',
-					headers: {
-						accept: 'application/json',
-						Authorization: SHORT_IO_API_KEY
+			try {
+				const response = await fetch(
+					`https://api.short.io/api/links?domain_id=${SHORT_IO_DOMAIN_ID}&limit=150`,
+					{
+						method: 'GET',
+						headers: {
+							accept: 'application/json',
+							Authorization: SHORT_IO_API_KEY
+						}
 					}
+				);
+
+				const data = await response.json();
+
+				if (!response.ok) {
+					console.error('Short.io API error:', data);
+					return json({ error: data.message || 'Failed to fetch links', details: data }, { status: response.status });
 				}
-			);
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				return json({ error: data.message || 'Failed to fetch links' }, { status: response.status });
+				// Ensure we return links array in consistent format
+				return json({ 
+					links: data.links || [],
+					count: data.count || 0,
+					success: true
+				});
+			} catch (error) {
+				console.error('Error fetching links:', error);
+				return json({ error: 'Failed to fetch links', details: String(error) }, { status: 500 });
 			}
-
-			return json(data);
 		}
 
 		return json({ error: 'Invalid action' }, { status: 400 });
